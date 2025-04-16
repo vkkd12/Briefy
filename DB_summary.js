@@ -10,7 +10,7 @@ const summarySchema = new Schema({
         type: String,
         required: true,
     },
-    email: {
+    uid: {
         type: String,
         required: true,
     },
