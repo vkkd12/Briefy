@@ -31,10 +31,10 @@ app.post("/store", async (req, res) => {
 });
 
 app.post("/get_summary", async (req, res) => {
-    const { uid } = req.body;
-    const mail = await DB_summary.find({ uid: uid });
-    if (mail) {
-        res.status(200).json(mail);
+    const { uids } = req.body;
+    const mails = await DB_summary.find({ uid: { $in: uids } });
+    if (mails) {
+        res.status(200).json(mails);
     } else {
         res.status(400);
     }
