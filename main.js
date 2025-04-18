@@ -20,23 +20,33 @@ app.get('/', (req, res) => {
 });
 
 app.post("/store", async (req, res) => {
-    const { uid, mail } = req.body;
-    const { subject, body } = mail;
-    const summary = await summarise(body);
-    const arr = summary[0].summary_text
-    const category = get_category(subject + body);
-    const new_object = new DB_summary({ summary: arr, category: category, uid: uid });
-    await new_object.save();
-    res.status(200);
+    try {
+        const { uid, mail } = req.body;
+        const { subject, body } = mail;
+
+        const summary = await summarise(body);
+        const arr = summary[0].summary_text
+        const category = get_category(subject + body);
+
+        const new_object = new DB_summary({ summary: arr, category: category, uid: uid });
+        await new_object.save();
+
+        res.status(200);
+    } catch (err) {
+        res.status(400).send({ error: err.message || 'Bad Request' });
+    }
+
 });
 
 app.post("/get_summary", async (req, res) => {
-    const { uids } = req.body;
-    const mails = await DB_summary.find({ uid: { $in: uids } });
-    if (mails) {
-        res.status(200).json(mails);
-    } else {
-        res.status(400);
+    try {
+        const { uids } = req.body;
+        const mails = await DB_summary.find({ uid: { $in: uids } });
+        if (mails) {
+            res.status(200).json(mails);
+        } else throw Error
+    } catch (err) {
+        res.status(400).send({ error: err.message || 'Bad Request' });
     }
 });
 
