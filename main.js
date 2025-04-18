@@ -21,7 +21,8 @@ app.get('/', (req, res) => {
 
 app.post("/store", async (req, res) => {
     try {
-        const { uid, body } = req.body;
+        const { uid, mail } = req.body;
+        const body = mail;
 
         const summary = await summarise(body);
         const arr = summary[0].summary_text
