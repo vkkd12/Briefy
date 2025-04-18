@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 const port = 3000;
-const h = process.env.DEV ? "http://" : "https://";
+const h = process.env.Dev ? "http://" : "https://";
 
 
 app.use(express.json());
@@ -22,21 +22,41 @@ app.get('/', (req, res) => {
 app.post("/store", async (req, res) => {
     try {
         const { uid, mail } = req.body;
-        const body = mail;
 
-        const summary = await summarise(body);
-        const arr = summary[0].summary_text
-        const category = get_category(body);
+        if (!uid || !mail) {
+            return res.status(400).json({ error: "UID and Mail are required." });
+        }
 
-        const new_object = new DB_summary({ summary: arr, category: category, uid: uid });
-        await new_object.save();
+        const existingEntry = await DB_summary.findOne({ uid });
 
+        if (existingEntry) {
+            return res.status(200).json({ message: "UID already exists" });
+        }
 
-        res.status(200);
+        let summaryResult = await summarise(mail);
+        let summarizedText = summaryResult[0]?.summary_text;
+
+        if (!summarizedText) throw new Error("First summarization failed");
+
+        summaryResult = await summarise(summarizedText);
+        summarizedText = summaryResult[0]?.summary_text;
+
+        if (!summarizedText) throw new Error("Second summarization failed");
+
+        const category = get_category(summarizedText);
+
+        const newEntry = new DB_summary({
+            summary: summarizedText,
+            category,
+            uid,
+        });
+
+        await newEntry.save();
+
+        res.status(200).json({ message: "Summary stored successfully" });
     } catch (err) {
-        res.status(400).send({ error: err.message || 'Bad Request' });
+        res.status(400).json({ error: err.message || "Bad Request" });
     }
-
 });
 
 app.post("/get_summary", async (req, res) => {
