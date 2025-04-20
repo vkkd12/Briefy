@@ -34,15 +34,22 @@ app.post("/store", async (req, res) => {
         }
 
         let summarizedText = mail;
-        if (mail.length() > 100) {
+
+        if (mail.length > 100) {
             let summaryResult = await summarise(mail);
             summarizedText = summaryResult[0]?.summary_text;
-            if (!summarizedText) throw new Error("First summarization failed");
 
-            if (summarizedText.length() > mail.length()) {
+            if (!summarizedText) {
+                throw new Error("First summarization failed");
+            }
+
+            if (summarizedText.length > mail.length) {
                 summaryResult = await summarise(summarizedText);
                 summarizedText = summaryResult[0]?.summary_text;
-                if (!summarizedText) throw new Error("Second summarization failed");
+
+                if (!summarizedText) {
+                    throw new Error("Second summarization failed");
+                }
             }
         }
 
