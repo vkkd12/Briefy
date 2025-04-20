@@ -33,18 +33,20 @@ app.post("/store", async (req, res) => {
             return res.status(200).json({ message: "UID already exists" });
         }
 
-        let summaryResult = await summarise(mail);
-        let summarizedText = summaryResult[0]?.summary_text;
+        let summarizedText = mail;
+        if (mail.length() > 100) {
+            let summaryResult = await summarise(mail);
+            summarizedText = summaryResult[0]?.summary_text;
+            if (!summarizedText) throw new Error("First summarization failed");
 
-        if (!summarizedText) throw new Error("First summarization failed");
-
-        summaryResult = await summarise(summarizedText);
-        summarizedText = summaryResult[0]?.summary_text;
-
-        if (!summarizedText) throw new Error("Second summarization failed");
+            if (summarizedText.length() > mail.length()) {
+                summaryResult = await summarise(summarizedText);
+                summarizedText = summaryResult[0]?.summary_text;
+                if (!summarizedText) throw new Error("Second summarization failed");
+            }
+        }
 
         const category = get_category(summarizedText);
-
         const newEntry = new DB_summary({
             summary: summarizedText,
             category,
@@ -52,7 +54,6 @@ app.post("/store", async (req, res) => {
         });
 
         await newEntry.save();
-
         res.status(200).json({ message: "Summary stored successfully" });
     } catch (err) {
         res.status(400).json({ error: err.message || "Bad Request" });
