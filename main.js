@@ -14,22 +14,24 @@ const h = process.env.Dev ? "http://" : "https://";
 
 app.use(express.json());
 
+let passTime = null;
 app.use("*", async (req, res, next) => {
   const now = new Date();
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const seconds = now.getSeconds();
+  const THIRTY_MINUTES_MS = 30 * 60 * 1000;
 
-  if (minutes === 30 && seconds === 0) {
+  const timeDifference = passTime ? now - passTime : Infinity;
+  if (timeDifference > THIRTY_MINUTES_MS) {
     try {
       await DB_summary.deleteMany({});
-      console.log("DB_summary cleared at hh:30:00");
+      passTime = now;
     } catch (err) {
       console.error("Failed to delete DB_summary:", err);
     }
   }
-  next(); 
+
+  next();
 });
+
 
 
 app.get('/', (req, res) => {
