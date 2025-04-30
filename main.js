@@ -14,32 +14,38 @@ const h = process.env.Dev ? "http://" : "https://";
 
 app.use(express.json());
 
+let isDeleting = false;
 let passTime = null;
-app.use("*", async (req, res, next) => {
+
+async function x() {
+  if (isDeleting) return;
+
   const now = new Date();
   const THIRTY_MINUTES_MS = 30 * 60 * 1000;
-
   const timeDifference = passTime ? now - passTime : Infinity;
+
   if (timeDifference > THIRTY_MINUTES_MS) {
+    isDeleting = true;
     try {
       await DB_summary.deleteMany({});
       passTime = now;
     } catch (err) {
       console.error("Failed to delete DB_summary:", err);
+    } finally {
+      isDeleting = false;
     }
   }
+}
 
-  next();
+app.get('/', async (req, res) => {
+  await x();
+  res.send('Hello, World!');
 });
 
-
-
-app.get('/', (req, res) => {
-    res.send('Hello, World!');
-});
 
 app.post("/store", async (req, res) => {
     try {
+        await x();
         const { uid, mail } = req.body;
 
         if (!uid || !mail) {
@@ -88,6 +94,7 @@ app.post("/store", async (req, res) => {
 
 app.post("/get_summary", async (req, res) => {
     try {
+        await x();
         const { uids } = req.body;
         const mails = await DB_summary.find({ uid: { $in: uids } });
         if (mails) {
