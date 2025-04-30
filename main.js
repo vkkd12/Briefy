@@ -14,6 +14,23 @@ const h = process.env.Dev ? "http://" : "https://";
 
 app.use(express.json());
 
+app.use("*", async (req, res, next) => {
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+
+  if (minutes === 30 && seconds === 0) {
+    try {
+      await DB_summary.deleteMany({});
+      console.log("DB_summary cleared at hh:30:00");
+    } catch (err) {
+      console.error("Failed to delete DB_summary:", err);
+    }
+  }
+  next(); 
+});
+
 
 app.get('/', (req, res) => {
     res.send('Hello, World!');
